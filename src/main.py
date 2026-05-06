@@ -133,8 +133,12 @@ def collect_items(
                         "reales de catalogo usa STREAMING_API_PROVIDER=streamingavailability."
                     )
         except requests.RequestException as exc:
-            LOGGER.error("Fallo consultando API de streaming: %s", _http_error_summary(exc))
-            errors.append("No se pudieron consultar plataformas de streaming.")
+            summary = _http_error_summary(exc)
+            LOGGER.error("Fallo consultando API de streaming: %s", summary)
+            errors.append(
+                "No se pudieron consultar plataformas de streaming "
+                f"con {config.streaming_api_provider} ({summary})."
+            )
 
     return cinema_items, streaming_items, errors, notices
 

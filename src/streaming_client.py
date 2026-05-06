@@ -286,7 +286,25 @@ class StreamingClient:
         if self.watchmode_source_ids:
             params["source_ids"] = ",".join(self.watchmode_source_ids)
 
-        payload = self._watchmode_get("/list-titles/", params)
+        try:
+            payload = self._watchmode_get("/list-titles/", params)
+        except requests.RequestException as exc:
+            LOGGER.warning(
+                "Watchmode fallo con filtro de fecha reciente: %s. Se prueba fallback.",
+                _http_error_summary(exc),
+            )
+            fallback_params: dict[str, object] = {
+                "types": types,
+                "regions": country.upper(),
+                "source_types": "sub",
+                "sort_by": "popularity_desc",
+                "limit": 20,
+                "page": 1,
+            }
+            if self.watchmode_source_ids:
+                fallback_params["source_ids"] = ",".join(self.watchmode_source_ids)
+            payload = self._watchmode_get("/list-titles/", fallback_params)
+
         raw_titles = payload.get("titles") or payload.get("results") or []
         if not isinstance(raw_titles, list):
             return []
