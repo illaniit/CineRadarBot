@@ -50,6 +50,9 @@ jobs:
           MAX_STREAMING_PAGES: ${{ vars.MAX_STREAMING_PAGES || '3' }}
           INCLUDE_SERIES: ${{ vars.INCLUDE_SERIES || 'true' }}
           SEND_STREAMING_STATUS: ${{ vars.SEND_STREAMING_STATUS || 'true' }}
+          ONLY_MAJOR_RELEASES: ${{ vars.ONLY_MAJOR_RELEASES || 'true' }}
+          MIN_TMDB_POPULARITY: ${{ vars.MIN_TMDB_POPULARITY || '8.0' }}
+          MIN_STREAMING_VOTE_AVERAGE: ${{ vars.MIN_STREAMING_VOTE_AVERAGE || '6.5' }}
           STREAMING_CATALOGS: ${{ vars.STREAMING_CATALOGS || 'netflix,prime,disney,hbo,movistar,filmin,apple,skyshowtime' }}
           WATCHMODE_SOURCE_IDS: ${{ vars.WATCHMODE_SOURCE_IDS }}
         run: python -m src.main

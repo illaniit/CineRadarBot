@@ -227,6 +227,7 @@ class StreamingClient:
             poster_url=poster_url,
             vote_average=vote_average,
             vote_count=None,
+            popularity=_as_float(show.get("popularity")),
             tmdb_id=tmdb_id,
             media_type=media_type,
             platform_names=platforms or [platform_label],
@@ -341,6 +342,7 @@ class StreamingClient:
         raw_type = str(raw_title.get("type") or "").lower()
         media_type = "series" if raw_type in {"tv_series", "tv_miniseries"} else "movie"
         _, tmdb_id = _parse_tmdb_ref(raw_title.get("tmdb_id") or raw_title.get("tmdbId"))
+        vote_average = _normalise_watchmode_rating(raw_title)
         provider_key = _slug(",".join(platforms))
         unique_key = f"streaming:{provider_key}:{tmdb_id or watchmode_id}:{release_date}"
         if media_type == "series":
@@ -354,8 +356,13 @@ class StreamingClient:
             release_date=release_date,
             overview=raw_title.get("plot_overview") or None,
             poster_url=raw_title.get("poster") or raw_title.get("poster_url") or None,
-            vote_average=None,
+            vote_average=vote_average,
             vote_count=None,
+            popularity=_as_float(
+                raw_title.get("popularity")
+                or raw_title.get("relevance_percent")
+                or raw_title.get("relevance")
+            ),
             tmdb_id=tmdb_id,
             media_type=media_type,
             platform_names=platforms,
@@ -402,6 +409,30 @@ def _parse_tmdb_ref(value: object) -> tuple[str, int | None]:
         return media_type, int(raw)
     except ValueError:
         return media_type, None
+
+
+def _normalise_watchmode_rating(raw_title: dict[str, Any]) -> float | None:
+    for key in ("user_rating", "imdb_rating", "tmdb_rating", "rating"):
+        rating = _as_float(raw_title.get(key))
+        if rating is None:
+            continue
+        if rating > 10:
+            return rating / 10
+        return rating
+
+    critic_score = _as_float(raw_title.get("critic_score"))
+    if critic_score is not None:
+        return critic_score / 10 if critic_score > 10 else critic_score
+    return None
+
+
+def _as_float(value: object) -> float | None:
+    if value is None or value == "":
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _extract_streaming_availability_poster(show: dict[str, Any]) -> str | None:

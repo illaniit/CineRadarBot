@@ -69,7 +69,11 @@ class TMDbClient:
 
         return sorted(
             results.values(),
-            key=lambda movie: (movie.release_date or "9999-99-99", movie.title),
+            key=lambda movie: (
+                movie.release_date or "9999-99-99",
+                -(movie.popularity or 0),
+                movie.title,
+            ),
         )
 
     def _get(self, path: str, params: dict[str, object]) -> dict[str, Any]:
@@ -115,6 +119,7 @@ class TMDbClient:
             poster_url=poster_url,
             vote_average=raw_movie.get("vote_average"),
             vote_count=raw_movie.get("vote_count"),
+            popularity=raw_movie.get("popularity"),
             tmdb_id=int(tmdb_id),
             platform_names=["Cine"],
             unique_key=f"cinema:{tmdb_id}:{release_date}",

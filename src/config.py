@@ -20,6 +20,16 @@ def _get_int(name: str, default: int) -> int:
         raise ValueError(f"{name} debe ser un entero") from exc
 
 
+def _get_float(name: str, default: float) -> float:
+    value = os.getenv(name)
+    if value is None or value == "":
+        return default
+    try:
+        return float(value)
+    except ValueError as exc:
+        raise ValueError(f"{name} debe ser un numero") from exc
+
+
 def _get_list(name: str, default: str) -> list[str]:
     raw = os.getenv(name, default)
     return [item.strip() for item in raw.split(",") if item.strip()]
@@ -52,6 +62,9 @@ class AppConfig:
     watchmode_source_ids: list[str]
     include_series: bool
     send_streaming_status: bool
+    only_major_releases: bool
+    min_tmdb_popularity: float
+    min_streaming_vote_average: float
 
     @property
     def tmdb_auth_available(self) -> bool:
@@ -98,4 +111,7 @@ def load_config() -> AppConfig:
         watchmode_source_ids=_get_list("WATCHMODE_SOURCE_IDS", ""),
         include_series=_get_bool("INCLUDE_SERIES", True),
         send_streaming_status=_get_bool("SEND_STREAMING_STATUS", True),
+        only_major_releases=_get_bool("ONLY_MAJOR_RELEASES", True),
+        min_tmdb_popularity=_get_float("MIN_TMDB_POPULARITY", 8.0),
+        min_streaming_vote_average=_get_float("MIN_STREAMING_VOTE_AVERAGE", 6.5),
     )

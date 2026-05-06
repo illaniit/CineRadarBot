@@ -90,5 +90,8 @@ Set-RepoVariable $repoFullName "MAX_ITEMS_PER_MESSAGE" "8"
 Set-RepoVariable $repoFullName "MAX_STREAMING_PAGES" "3"
 Set-RepoVariable $repoFullName "INCLUDE_SERIES" "true"
 Set-RepoVariable $repoFullName "SEND_STREAMING_STATUS" "true"
+Set-RepoVariable $repoFullName "ONLY_MAJOR_RELEASES" "true"
+Set-RepoVariable $repoFullName "MIN_TMDB_POPULARITY" "8.0"
+Set-RepoVariable $repoFullName "MIN_STREAMING_VOTE_AVERAGE" "6.5"
 
 Write-Host "Listo. Ya puedes lanzar el workflow manualmente desde GitHub Actions."

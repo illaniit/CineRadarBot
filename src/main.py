@@ -32,6 +32,17 @@ def main() -> int:
     storage.load()
 
     cinema_items, streaming_items, errors, notices = collect_items(config)
+    if config.only_major_releases:
+        before_cinema = len(cinema_items)
+        before_streaming = len(streaming_items)
+        cinema_items, streaming_items = _filter_major_releases(
+            cinema_items, streaming_items, config
+        )
+        notices.append(
+            "Filtro grandes estrenos: "
+            f"cine {before_cinema}->{len(cinema_items)}, "
+            f"streaming {before_streaming}->{len(streaming_items)}."
+        )
     cinema_items = _filter_new(cinema_items, storage)
     streaming_items = _filter_new(streaming_items, storage)
     if config.send_streaming_status:
@@ -130,6 +141,25 @@ def collect_items(
 
 def _filter_new(items: list[MovieItem], storage: SentItemsStorage) -> list[MovieItem]:
     return [item for item in items if not storage.has_seen(item.unique_key)]
+
+
+def _filter_major_releases(
+    cinema_items: list[MovieItem],
+    streaming_items: list[MovieItem],
+    config: AppConfig,
+) -> tuple[list[MovieItem], list[MovieItem]]:
+    filtered_cinema = [
+        item
+        for item in cinema_items
+        if (item.popularity or 0) >= config.min_tmdb_popularity
+    ]
+    filtered_streaming = [
+        item
+        for item in streaming_items
+        if item.vote_average is None
+        or item.vote_average >= config.min_streaming_vote_average
+    ]
+    return filtered_cinema, filtered_streaming
 
 
 def _send_grouped_items(

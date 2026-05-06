@@ -12,6 +12,7 @@ class MovieItem:
     poster_url: str | None = None
     vote_average: float | None = None
     vote_count: int | None = None
+    popularity: float | None = None
     tmdb_id: int | None = None
     media_type: str = "movie"
     platform_names: list[str] = field(default_factory=list)

@@ -14,6 +14,8 @@ Cada aviso incluye:
 - enlace a TMDb cuando hay ID de TMDb;
 - póster cuando la API lo devuelve.
 
+Por defecto está activado `ONLY_MAJOR_RELEASES=true`, para evitar avisos de títulos muy pequeños. En cine se usa `MIN_TMDB_POPULARITY=8.0`; si quieres ser más exigente, sube a `15` o `20`. Si quieres ver todo, pon `ONLY_MAJOR_RELEASES=false`.
+
 ## APIs necesarias
 
 ### Telegram
@@ -134,6 +136,9 @@ Opcionalmente, configura **Repository Variables**:
 - `WATCHMODE_SOURCE_IDS`
 - `INCLUDE_SERIES`
 - `SEND_STREAMING_STATUS`
+- `ONLY_MAJOR_RELEASES`
+- `MIN_TMDB_POPULARITY`
+- `MIN_STREAMING_VOTE_AVERAGE`
 
 ## Persistencia de duplicados
 
