@@ -32,6 +32,7 @@ def main() -> int:
     storage.load()
 
     cinema_items, streaming_items, errors, notices = collect_items(config)
+    had_streaming_error = any("plataformas de streaming" in error for error in errors)
     if config.only_major_releases:
         before_cinema = len(cinema_items)
         before_streaming = len(streaming_items)
@@ -45,10 +46,12 @@ def main() -> int:
         )
     cinema_items = _filter_new(cinema_items, storage)
     streaming_items = _filter_new(streaming_items, storage)
-    if config.send_streaming_status:
+    if config.send_streaming_status and not had_streaming_error:
         notices.append(
             f"Streaming tras filtrar duplicados: {len(streaming_items)} avisos nuevos."
         )
+    elif config.send_streaming_status and had_streaming_error:
+        notices.append("Streaming no se filtro por duplicados porque la consulta fallo.")
 
     telegram = TelegramClient(config.telegram_bot_token, config.telegram_chat_id)
     sent_keys: list[str] = []

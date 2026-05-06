@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time as time_module
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Any
 
@@ -325,13 +326,40 @@ class StreamingClient:
     def _watchmode_get(self, path: str, params: dict[str, object]) -> dict[str, Any]:
         query = dict(params)
         query["apiKey"] = self.api_key
-        response = requests.get(
-            f"{WATCHMODE_BASE_URL}{path}",
-            params=query,
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
-        return response.json()
+        last_error: requests.RequestException | None = None
+        for attempt in range(1, 4):
+            try:
+                response = requests.get(
+                    f"{WATCHMODE_BASE_URL}{path}",
+                    params=query,
+                    timeout=self.timeout,
+                )
+                if response.status_code in {429, 502, 503, 504} and attempt < 3:
+                    LOGGER.warning(
+                        "Watchmode devolvio HTTP %s; reintento %s/3",
+                        response.status_code,
+                        attempt + 1,
+                    )
+                    time_module.sleep(2 * attempt)
+                    continue
+                response.raise_for_status()
+                return response.json()
+            except requests.RequestException as exc:
+                last_error = exc
+                response = getattr(exc, "response", None)
+                status_code = response.status_code if response is not None else None
+                if status_code not in {429, 502, 503, 504} or attempt >= 3:
+                    raise
+                LOGGER.warning(
+                    "Watchmode fallo con %s; reintento %s/3",
+                    _http_error_summary(exc),
+                    attempt + 1,
+                )
+                time_module.sleep(2 * attempt)
+
+        if last_error:
+            raise last_error
+        raise requests.RequestException("Watchmode no devolvio respuesta")
 
     def _normalise_watchmode_title(
         self, raw_title: dict[str, Any], country: str
