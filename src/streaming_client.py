@@ -270,16 +270,16 @@ class StreamingClient:
 
     def _get_watchmode_releases(self, country: str, days_ahead: int) -> list[MovieItem]:
         today = date.today()
-        end_date = today + timedelta(days=days_ahead)
+        start_date = today - timedelta(days=days_ahead)
         types = "movie,tv_series,tv_miniseries" if self.include_series else "movie"
         params: dict[str, object] = {
             "types": types,
             "regions": country.upper(),
             "source_types": "sub",
             "sort_by": "release_date_desc",
-            "release_date_start": today.strftime("%Y%m%d"),
-            "release_date_end": end_date.strftime("%Y%m%d"),
-            "limit": 50,
+            "release_date_start": start_date.strftime("%Y%m%d"),
+            "release_date_end": today.strftime("%Y%m%d"),
+            "limit": 20,
             "page": 1,
         }
         if self.watchmode_source_ids:

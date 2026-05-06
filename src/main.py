@@ -115,6 +115,12 @@ def collect_items(
                     f"{config.streaming_api_provider}: {len(streaming_items)} resultados "
                     "antes de filtrar duplicados."
                 )
+                if config.streaming_api_provider == "watchmode" and not streaming_items:
+                    notices.append(
+                        "Watchmode respondio correctamente, pero no devolvio titulos "
+                        "recientes disponibles en streaming para esta ventana. Para altas "
+                        "reales de catalogo usa STREAMING_API_PROVIDER=streamingavailability."
+                    )
         except requests.RequestException as exc:
             LOGGER.error("Fallo consultando API de streaming: %s", _http_error_summary(exc))
             errors.append("No se pudieron consultar plataformas de streaming.")

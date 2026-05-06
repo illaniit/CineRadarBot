@@ -24,7 +24,7 @@ def format_movie_item(movie: MovieItem, max_length: int = TELEGRAM_TEXT_LIMIT) -
     if display_date:
         lines.append(f"📅 Fecha: {display_date}")
 
-    if movie.vote_average is not None:
+    if _has_useful_rating(movie):
         lines.append(f"⭐ Nota: {movie.vote_average:.1f}/10")
 
     overview = _truncate(movie.overview or "Sinopsis no disponible.", 420)
@@ -120,6 +120,14 @@ def _format_date(raw_date: str | None) -> str | None:
     except ValueError:
         return raw_date
     return parsed.strftime("%d/%m/%Y")
+
+
+def _has_useful_rating(movie: MovieItem) -> bool:
+    if movie.vote_average is None or movie.vote_average <= 0:
+        return False
+    if movie.vote_count is not None and movie.vote_count <= 0:
+        return False
+    return True
 
 
 def _truncate(text: str, max_length: int) -> str:

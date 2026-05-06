@@ -69,7 +69,7 @@ STREAMING_API_KEY=TU_CLAVE_WATCHMODE
 WATCHMODE_SOURCE_IDS=
 ```
 
-Watchmode funciona con `/v1/list-titles/` y `/v1/title/{id}/sources/`. Es útil para disponibilidad, pero el listado gratuito filtra por fecha de estreno original de la película, no necesariamente por fecha exacta de alta en catálogo. Por eso, para “novedades añadidas a plataformas”, `streamingavailability` es más honesto y directo.
+Watchmode funciona con `/v1/list-titles/` y `/v1/title/{id}/sources/`. El bot lo usa como fallback buscando títulos estrenados recientemente y disponibles en plataformas de suscripción en España. Es útil para disponibilidad, pero el listado gratuito filtra por fecha de estreno original de la película o serie, no necesariamente por fecha exacta de alta en catálogo. Por eso, para “novedades añadidas a plataformas”, `streamingavailability` es más honesto y directo.
 
 ## Cargar secrets en GitHub de forma segura
 
