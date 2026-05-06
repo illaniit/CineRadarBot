@@ -25,6 +25,13 @@ def _get_list(name: str, default: str) -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def _get_bool(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None or value == "":
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "y", "si", "sí", "on"}
+
+
 @dataclass(frozen=True, slots=True)
 class AppConfig:
     telegram_bot_token: str
@@ -42,6 +49,7 @@ class AppConfig:
     storage_path: str
     streaming_catalogs: list[str]
     watchmode_source_ids: list[str]
+    include_series: bool
 
     @property
     def tmdb_auth_available(self) -> bool:
@@ -85,4 +93,5 @@ def load_config() -> AppConfig:
             "netflix,prime,disney,hbo,movistar,filmin,apple,skyshowtime",
         ),
         watchmode_source_ids=_get_list("WATCHMODE_SOURCE_IDS", ""),
+        include_series=_get_bool("INCLUDE_SERIES", True),
     )

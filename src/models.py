@@ -13,6 +13,7 @@ class MovieItem:
     vote_average: float | None = None
     vote_count: int | None = None
     tmdb_id: int | None = None
+    media_type: str = "movie"
     platform_names: list[str] = field(default_factory=list)
     provider: str | None = None
     unique_key: str | None = None
@@ -21,4 +22,5 @@ class MovieItem:
     def tmdb_url(self) -> str | None:
         if self.tmdb_id is None:
             return None
-        return f"https://www.themoviedb.org/movie/{self.tmdb_id}"
+        path = "tv" if self.media_type in {"tv", "series"} else "movie"
+        return f"https://www.themoviedb.org/{path}/{self.tmdb_id}"

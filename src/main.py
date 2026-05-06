@@ -81,6 +81,7 @@ def collect_items(config: AppConfig) -> tuple[list[MovieItem], list[MovieItem], 
         provider=config.streaming_api_provider,
         catalogs=config.streaming_catalogs,
         watchmode_source_ids=config.watchmode_source_ids,
+        include_series=config.include_series,
         max_pages=config.max_streaming_pages,
     )
     try:

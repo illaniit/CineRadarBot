@@ -45,6 +45,7 @@ class StreamingClient:
         provider: str,
         catalogs: list[str],
         watchmode_source_ids: list[str],
+        include_series: bool = True,
         timeout: int = 25,
         max_pages: int = 3,
     ) -> None:
@@ -52,6 +53,7 @@ class StreamingClient:
         self.provider = provider
         self.catalogs = catalogs
         self.watchmode_source_ids = watchmode_source_ids
+        self.include_series = include_series
         self.timeout = timeout
         self.max_pages = max_pages
 
@@ -88,49 +90,51 @@ class StreamingClient:
             datetime.combine(to_date, time.min, tzinfo=timezone.utc).timestamp()
         )
 
+        show_types = ["movie", "series"] if self.include_series else ["movie"]
         for catalog in catalogs:
-            cursor: str | None = None
-            for _ in range(self.max_pages):
-                params = {
-                    "country": country_code,
-                    "change_type": "new",
-                    "item_type": "show",
-                    "catalogs": catalog,
-                    "show_type": "movie",
-                    "output_language": output_language,
-                    "from": from_timestamp,
-                    "to": to_timestamp,
-                    "order_direction": "desc",
-                }
-                if cursor:
-                    params["cursor"] = cursor
+            for show_type in show_types:
+                cursor: str | None = None
+                for _ in range(self.max_pages):
+                    params = {
+                        "country": country_code,
+                        "change_type": "new",
+                        "item_type": "show",
+                        "catalogs": catalog,
+                        "show_type": show_type,
+                        "output_language": output_language,
+                        "from": from_timestamp,
+                        "to": to_timestamp,
+                        "order_direction": "desc",
+                    }
+                    if cursor:
+                        params["cursor"] = cursor
 
-                payload = self._streaming_availability_get("/changes", params)
-                changes = payload.get("changes") or payload.get("items") or []
-                if isinstance(changes, dict):
-                    changes = changes.get("changes") or changes.get("items") or []
-                if not isinstance(changes, list):
-                    break
-                shows = payload.get("shows") or {}
-                if not isinstance(shows, dict):
-                    shows = {}
+                    payload = self._streaming_availability_get("/changes", params)
+                    changes = payload.get("changes") or payload.get("items") or []
+                    if isinstance(changes, dict):
+                        changes = changes.get("changes") or changes.get("items") or []
+                    if not isinstance(changes, list):
+                        break
+                    shows = payload.get("shows") or {}
+                    if not isinstance(shows, dict):
+                        shows = {}
 
-                for change in changes:
-                    if not isinstance(change, dict):
-                        continue
-                    show_id = str(change.get("showId") or change.get("show_id") or "")
-                    show = shows.get(show_id) if show_id else None
-                    item = self._normalise_streaming_availability_change(
-                        change, show=show, fallback_catalog=catalog
-                    )
-                    if item:
-                        items[item.unique_key or f"{item.provider}:{item.title}"] = item
+                    for change in changes:
+                        if not isinstance(change, dict):
+                            continue
+                        show_id = str(change.get("showId") or change.get("show_id") or "")
+                        show = shows.get(show_id) if show_id else None
+                        item = self._normalise_streaming_availability_change(
+                            change, show=show, fallback_catalog=catalog
+                        )
+                        if item:
+                            items[item.unique_key or f"{item.provider}:{item.title}"] = item
 
-                if not payload.get("hasMore"):
-                    break
-                cursor = payload.get("nextCursor")
-                if not cursor:
-                    break
+                    if not payload.get("hasMore"):
+                        break
+                    cursor = payload.get("nextCursor")
+                    if not cursor:
+                        break
 
         return sorted(
             items.values(),
@@ -176,10 +180,12 @@ class StreamingClient:
             or show.get("showType")
             or show.get("show_type")
         )
-        if show_type and show_type != "movie":
+        if show_type not in {"movie", "series"}:
+            return None
+        if show_type == "series" and not self.include_series:
             return None
 
-        tmdb_id = _parse_tmdb_id(show.get("tmdbId") or show.get("tmdb_id"))
+        media_type, tmdb_id = _parse_tmdb_ref(show.get("tmdbId") or show.get("tmdb_id"))
         title = show.get("title") or show.get("originalTitle") or show.get("original_title")
         if not title:
             return None
@@ -206,8 +212,12 @@ class StreamingClient:
         rating = show.get("rating")
         vote_average = float(rating) / 10 if isinstance(rating, (int, float)) else None
 
+        media_type = "series" if show_type == "series" else media_type
         unique_id = tmdb_id or show.get("id") or title.lower()
         provider_key = _slug(platform_label)
+        unique_key = f"streaming:{provider_key}:{unique_id}:{change_date}"
+        if media_type in {"tv", "series"}:
+            unique_key = f"streaming:{provider_key}:series:{unique_id}:{change_date}"
 
         return MovieItem(
             title=title,
@@ -218,9 +228,10 @@ class StreamingClient:
             vote_average=vote_average,
             vote_count=None,
             tmdb_id=tmdb_id,
+            media_type=media_type,
             platform_names=platforms or [platform_label],
             provider=self.provider,
-            unique_key=f"streaming:{provider_key}:{unique_id}:{change_date}",
+            unique_key=unique_key,
         )
 
     @staticmethod
@@ -260,8 +271,9 @@ class StreamingClient:
     def _get_watchmode_releases(self, country: str, days_ahead: int) -> list[MovieItem]:
         today = date.today()
         end_date = today + timedelta(days=days_ahead)
+        types = "movie,tv_series,tv_miniseries" if self.include_series else "movie"
         params: dict[str, object] = {
-            "types": "movie",
+            "types": types,
             "regions": country.upper(),
             "source_types": "sub",
             "sort_by": "release_date_desc",
@@ -326,8 +338,15 @@ class StreamingClient:
         if raw_title.get("release_date"):
             release_date = str(raw_title["release_date"])[:10]
 
-        tmdb_id = _parse_tmdb_id(raw_title.get("tmdb_id") or raw_title.get("tmdbId"))
+        raw_type = str(raw_title.get("type") or "").lower()
+        media_type = "series" if raw_type in {"tv_series", "tv_miniseries"} else "movie"
+        _, tmdb_id = _parse_tmdb_ref(raw_title.get("tmdb_id") or raw_title.get("tmdbId"))
         provider_key = _slug(",".join(platforms))
+        unique_key = f"streaming:{provider_key}:{tmdb_id or watchmode_id}:{release_date}"
+        if media_type == "series":
+            unique_key = (
+                f"streaming:{provider_key}:series:{tmdb_id or watchmode_id}:{release_date}"
+            )
 
         return MovieItem(
             title=title,
@@ -338,9 +357,10 @@ class StreamingClient:
             vote_average=None,
             vote_count=None,
             tmdb_id=tmdb_id,
+            media_type=media_type,
             platform_names=platforms,
             provider=self.provider,
-            unique_key=f"streaming:{provider_key}:{tmdb_id or watchmode_id}:{release_date}",
+            unique_key=unique_key,
         )
 
     def _get_watchmode_sources(self, watchmode_id: int, country: str) -> list[dict[str, Any]]:
@@ -366,18 +386,22 @@ class StreamingClient:
         return []
 
 
-def _parse_tmdb_id(value: object) -> int | None:
+def _parse_tmdb_ref(value: object) -> tuple[str, int | None]:
     if value is None:
-        return None
+        return "movie", None
     if isinstance(value, int):
-        return value
+        return "movie", value
     raw = str(value)
+    media_type = "movie"
     if raw.startswith("movie/"):
         raw = raw.split("/", 1)[1]
+    elif raw.startswith("tv/"):
+        raw = raw.split("/", 1)[1]
+        media_type = "series"
     try:
-        return int(raw)
+        return media_type, int(raw)
     except ValueError:
-        return None
+        return media_type, None
 
 
 def _extract_streaming_availability_poster(show: dict[str, Any]) -> str | None:

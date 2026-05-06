@@ -11,10 +11,14 @@ CAPTION_LIMIT = 1024
 
 
 def format_movie_item(movie: MovieItem, max_length: int = TELEGRAM_TEXT_LIMIT) -> str:
+    icon = "📺" if movie.media_type in {"tv", "series"} else "🎬"
     lines = [
-        f"🎬 {movie.title}",
+        f"{icon} {movie.title}",
         f"📍 Estreno en: {_format_origin(movie)}",
     ]
+
+    if movie.media_type in {"tv", "series"}:
+        lines.append("📺 Tipo: Serie")
 
     display_date = _format_date(movie.release_date)
     if display_date:

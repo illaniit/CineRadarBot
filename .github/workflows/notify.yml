@@ -47,6 +47,7 @@ jobs:
           MIN_TMDB_VOTE_COUNT: ${{ vars.MIN_TMDB_VOTE_COUNT || '0' }}
           MAX_ITEMS_PER_MESSAGE: ${{ vars.MAX_ITEMS_PER_MESSAGE || '8' }}
           MAX_STREAMING_PAGES: ${{ vars.MAX_STREAMING_PAGES || '3' }}
+          INCLUDE_SERIES: ${{ vars.INCLUDE_SERIES || 'true' }}
           STREAMING_CATALOGS: ${{ vars.STREAMING_CATALOGS || 'netflix,prime,disney,hbo,movistar,filmin,apple,skyshowtime' }}
           WATCHMODE_SOURCE_IDS: ${{ vars.WATCHMODE_SOURCE_IDS }}
         run: python -m src.main

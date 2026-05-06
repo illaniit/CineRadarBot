@@ -87,5 +87,6 @@ Set-RepoVariable $repoFullName "DAYS_AHEAD" "7"
 Set-RepoVariable $repoFullName "MIN_TMDB_VOTE_COUNT" "0"
 Set-RepoVariable $repoFullName "MAX_ITEMS_PER_MESSAGE" "8"
 Set-RepoVariable $repoFullName "MAX_STREAMING_PAGES" "3"
+Set-RepoVariable $repoFullName "INCLUDE_SERIES" "true"
 
 Write-Host "Listo. Ya puedes lanzar el workflow manualmente desde GitHub Actions."
