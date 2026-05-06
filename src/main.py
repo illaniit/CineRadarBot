@@ -45,13 +45,13 @@ def main() -> int:
     if cinema_items or streaming_items:
         sent_keys.extend(_send_grouped_items(telegram, cinema_items, streaming_items))
     else:
-        message = build_empty_digest(errors)
+        message = build_empty_digest(errors + notices)
         telegram.send_message(message)
 
     if errors and (cinema_items or streaming_items):
         telegram.send_message("⚠️ CineRadarBot tuvo avisos:\n" + "\n".join(f"- {e}" for e in errors))
 
-    if notices:
+    if notices and (cinema_items or streaming_items):
         telegram.send_message("ℹ️ Diagnóstico CineRadarBot:\n" + "\n".join(f"- {n}" for n in notices))
 
     if sent_keys:
