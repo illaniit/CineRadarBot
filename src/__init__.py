@@ -1,0 +1,1 @@
+"""CineRadarBot package."""
