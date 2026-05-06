@@ -31,9 +31,10 @@ class TMDbClient:
         language: str,
         days_ahead: int,
         min_vote_count: int = 0,
+        release_offset_days: int = 1,
     ) -> list[MovieItem]:
         today = date.today()
-        end_date = today + timedelta(days=days_ahead)
+        target_date = today - timedelta(days=release_offset_days)
         results: dict[tuple[int, str], MovieItem] = {}
 
         for endpoint in ("now_playing", "upcoming"):
@@ -51,9 +52,13 @@ class TMDbClient:
                     break
 
                 for raw_movie in movies:
-                    item = self._normalise_movie(raw_movie, today, end_date)
+                    item = self._normalise_movie(raw_movie, target_date, target_date)
                     if item is None:
                         continue
+                    item.unique_key = (
+                        f"cinema:after-{release_offset_days}d:"
+                        f"{item.tmdb_id}:{item.release_date}"
+                    )
                     if (item.vote_count or 0) < min_vote_count:
                         continue
                     results[(item.tmdb_id or 0, item.release_date or "")] = item

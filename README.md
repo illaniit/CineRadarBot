@@ -40,7 +40,7 @@ https://api.telegram.org/bot<TU_TOKEN>/getUpdates
 3. Usa preferiblemente el token Bearer v4 en `TMDB_API_TOKEN`.
 4. También puedes usar la API key v3 en `TMDB_API_KEY`.
 
-El bot consulta `movie/now_playing` y `movie/upcoming` con `region=ES` y `language=es-ES`, y filtra por fecha entre hoy y `DAYS_AHEAD`.
+El bot consulta `movie/now_playing` y `movie/upcoming` con `region=ES` y `language=es-ES`. Para cine, por defecto avisa de películas estrenadas ayer, es decir, cuando ya llevan un día en cartelera. Puedes cambiarlo con `CINEMA_RELEASE_OFFSET_DAYS`.
 
 ### Streaming
 
@@ -126,11 +126,14 @@ Opcionalmente, configura **Repository Variables**:
 - `COUNTRY`
 - `LANGUAGE`
 - `DAYS_AHEAD`
+- `CINEMA_RELEASE_OFFSET_DAYS`
 - `MIN_TMDB_VOTE_COUNT`
 - `MAX_ITEMS_PER_MESSAGE`
 - `MAX_STREAMING_PAGES`
 - `STREAMING_CATALOGS`
 - `WATCHMODE_SOURCE_IDS`
+- `INCLUDE_SERIES`
+- `SEND_STREAMING_STATUS`
 
 ## Persistencia de duplicados
 

@@ -43,6 +43,7 @@ class AppConfig:
     country: str
     language: str
     days_ahead: int
+    cinema_release_offset_days: int
     min_tmdb_vote_count: int
     max_items_per_message: int
     max_streaming_pages: int
@@ -50,6 +51,7 @@ class AppConfig:
     streaming_catalogs: list[str]
     watchmode_source_ids: list[str]
     include_series: bool
+    send_streaming_status: bool
 
     @property
     def tmdb_auth_available(self) -> bool:
@@ -84,6 +86,7 @@ def load_config() -> AppConfig:
         country=os.getenv("COUNTRY", "ES").strip().upper(),
         language=os.getenv("LANGUAGE", "es-ES").strip(),
         days_ahead=_get_int("DAYS_AHEAD", 7),
+        cinema_release_offset_days=_get_int("CINEMA_RELEASE_OFFSET_DAYS", 1),
         min_tmdb_vote_count=_get_int("MIN_TMDB_VOTE_COUNT", 0),
         max_items_per_message=_get_int("MAX_ITEMS_PER_MESSAGE", 8),
         max_streaming_pages=_get_int("MAX_STREAMING_PAGES", 3),
@@ -94,4 +97,5 @@ def load_config() -> AppConfig:
         ),
         watchmode_source_ids=_get_list("WATCHMODE_SOURCE_IDS", ""),
         include_series=_get_bool("INCLUDE_SERIES", True),
+        send_streaming_status=_get_bool("SEND_STREAMING_STATUS", True),
     )

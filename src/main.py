@@ -31,9 +31,13 @@ def main() -> int:
     storage = SentItemsStorage(config.storage_path)
     storage.load()
 
-    cinema_items, streaming_items, errors = collect_items(config)
+    cinema_items, streaming_items, errors, notices = collect_items(config)
     cinema_items = _filter_new(cinema_items, storage)
     streaming_items = _filter_new(streaming_items, storage)
+    if config.send_streaming_status:
+        notices.append(
+            f"Streaming tras filtrar duplicados: {len(streaming_items)} avisos nuevos."
+        )
 
     telegram = TelegramClient(config.telegram_bot_token, config.telegram_chat_id)
     sent_keys: list[str] = []
@@ -47,6 +51,9 @@ def main() -> int:
     if errors and (cinema_items or streaming_items):
         telegram.send_message("⚠️ CineRadarBot tuvo avisos:\n" + "\n".join(f"- {e}" for e in errors))
 
+    if notices:
+        telegram.send_message("ℹ️ Diagnóstico CineRadarBot:\n" + "\n".join(f"- {n}" for n in notices))
+
     if sent_keys:
         storage.mark_seen(sent_keys)
         storage.save()
@@ -58,8 +65,11 @@ def main() -> int:
     return 0
 
 
-def collect_items(config: AppConfig) -> tuple[list[MovieItem], list[MovieItem], list[str]]:
+def collect_items(
+    config: AppConfig,
+) -> tuple[list[MovieItem], list[MovieItem], list[str], list[str]]:
     errors: list[str] = []
+    notices: list[str] = []
     cinema_items: list[MovieItem] = []
     streaming_items: list[MovieItem] = []
 
@@ -70,32 +80,46 @@ def collect_items(config: AppConfig) -> tuple[list[MovieItem], list[MovieItem], 
             language=config.language,
             days_ahead=config.days_ahead,
             min_vote_count=config.min_tmdb_vote_count,
+            release_offset_days=config.cinema_release_offset_days,
         )
-        LOGGER.info("TMDb devolvio %s estrenos de cine", len(cinema_items))
+        LOGGER.info(
+            "TMDb devolvio %s estrenos de cine con offset %s dias",
+            len(cinema_items),
+            config.cinema_release_offset_days,
+        )
     except requests.RequestException as exc:
         LOGGER.error("Fallo consultando TMDb: %s", _http_error_summary(exc))
         errors.append("No se pudieron consultar estrenos de cine en TMDb.")
 
-    streaming = StreamingClient(
-        api_key=config.streaming_api_key,
-        provider=config.streaming_api_provider,
-        catalogs=config.streaming_catalogs,
-        watchmode_source_ids=config.watchmode_source_ids,
-        include_series=config.include_series,
-        max_pages=config.max_streaming_pages,
-    )
-    try:
-        streaming_items = streaming.get_streaming_releases(
-            country=config.country,
-            language=config.language,
-            days_ahead=config.days_ahead,
+    if not config.streaming_api_key:
+        errors.append("Streaming no se consulto porque falta STREAMING_API_KEY.")
+    else:
+        streaming = StreamingClient(
+            api_key=config.streaming_api_key,
+            provider=config.streaming_api_provider,
+            catalogs=config.streaming_catalogs,
+            watchmode_source_ids=config.watchmode_source_ids,
+            include_series=config.include_series,
+            max_pages=config.max_streaming_pages,
         )
-        LOGGER.info("Streaming devolvio %s novedades", len(streaming_items))
-    except requests.RequestException as exc:
-        LOGGER.error("Fallo consultando API de streaming: %s", _http_error_summary(exc))
-        errors.append("No se pudieron consultar plataformas de streaming.")
+        try:
+            streaming_items = streaming.get_streaming_releases(
+                country=config.country,
+                language=config.language,
+                days_ahead=config.days_ahead,
+            )
+            LOGGER.info("Streaming devolvio %s novedades", len(streaming_items))
+            if config.send_streaming_status:
+                notices.append(
+                    "Streaming consultado con "
+                    f"{config.streaming_api_provider}: {len(streaming_items)} resultados "
+                    "antes de filtrar duplicados."
+                )
+        except requests.RequestException as exc:
+            LOGGER.error("Fallo consultando API de streaming: %s", _http_error_summary(exc))
+            errors.append("No se pudieron consultar plataformas de streaming.")
 
-    return cinema_items, streaming_items, errors
+    return cinema_items, streaming_items, errors, notices
 
 
 def _filter_new(items: list[MovieItem], storage: SentItemsStorage) -> list[MovieItem]:

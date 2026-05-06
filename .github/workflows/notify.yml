@@ -44,10 +44,12 @@ jobs:
           COUNTRY: ${{ vars.COUNTRY || 'ES' }}
           LANGUAGE: ${{ vars.LANGUAGE || 'es-ES' }}
           DAYS_AHEAD: ${{ vars.DAYS_AHEAD || '7' }}
+          CINEMA_RELEASE_OFFSET_DAYS: ${{ vars.CINEMA_RELEASE_OFFSET_DAYS || '1' }}
           MIN_TMDB_VOTE_COUNT: ${{ vars.MIN_TMDB_VOTE_COUNT || '0' }}
           MAX_ITEMS_PER_MESSAGE: ${{ vars.MAX_ITEMS_PER_MESSAGE || '8' }}
           MAX_STREAMING_PAGES: ${{ vars.MAX_STREAMING_PAGES || '3' }}
           INCLUDE_SERIES: ${{ vars.INCLUDE_SERIES || 'true' }}
+          SEND_STREAMING_STATUS: ${{ vars.SEND_STREAMING_STATUS || 'true' }}
           STREAMING_CATALOGS: ${{ vars.STREAMING_CATALOGS || 'netflix,prime,disney,hbo,movistar,filmin,apple,skyshowtime' }}
           WATCHMODE_SOURCE_IDS: ${{ vars.WATCHMODE_SOURCE_IDS }}
         run: python -m src.main
